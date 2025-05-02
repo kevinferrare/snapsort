@@ -14,7 +14,7 @@ If `/path/to/source/` contains
 ├─ 20240530_210412.mp4
 └─ 4e69kpxgr88pm9pkjbr1b76far.jpg
 ```
-(consider `4e69kpxgr88pm9pkjbr1b76far,jpg` has an exif date of `2016-09-19 21.11.12`)
+(consider `4e69kpxgr88pm9pkjbr1b76far.jpg` has an exif date of `2016-09-19 21.11.12`)
 
 And you run
 ```bash
@@ -64,7 +64,6 @@ When everything is OK and if the `--write` parameter is provided, the files are 
 
 The extension is lowercase, and `jpeg` is renamed to `jpg`.
 
-extension is lower case and jpeg is renamed to jpg
 ## Command line options
 | Option                                  | Description                                                                        |
 |-----------------------------------------|------------------------------------------------------------------------------------|
