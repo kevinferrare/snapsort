@@ -6,7 +6,7 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,15 +23,14 @@ public class ApplicationTest {
   private Path outputFolder;
 
   @BeforeEach
-  public void setup(TestInfo testInfo, QuarkusMainLauncher quarkusMainLauncher) throws IOException {
-    String testName = testInfo.getDisplayName();
-    String inputFolderName = resourcesUtils.extractTestFiles("/testfiles.zip", testName);
-    outputFolder = Files.createTempDirectory("output" + testName);
+  public void setup(@TempDir Path tempDir, QuarkusMainLauncher quarkusMainLauncher) throws IOException {
+    String inputFolderName = resourcesUtils.extractTestFiles("/testfiles.zip", tempDir);
+    outputFolder = Files.createDirectory(tempDir.resolve("output"));
     launcher = new ApplicationLauncher(quarkusMainLauncher);
     launcher.withInputFolders(inputFolderName);
     launcher.withOutputFolder(outputFolder.toString());
     System.out.println("input folder is " + inputFolderName);
-    System.out.println("output folder is " + inputFolderName);
+    System.out.println("output folder is " + outputFolder);
   }
 
   @SneakyThrows
@@ -75,6 +74,13 @@ public class ApplicationTest {
   public void testRunWithDateMax() {
     launcher.withDateMax("2024-06-01");
     // 2025 is filtered out
+    testOutputFolderIsZipWithout("/2025/20250227_/2025-02-27 00.18.58.jpg");
+  }
+
+  @Test
+  public void testRunWithDateMaxOnBoundaryDay() {
+    // --date-max set to a day that has files; those files must still be included
+    launcher.withDateMax("2024-05-30");
     testOutputFolderIsZipWithout("/2025/20250227_/2025-02-27 00.18.58.jpg");
   }
 

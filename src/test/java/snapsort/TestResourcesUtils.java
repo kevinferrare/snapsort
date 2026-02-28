@@ -26,22 +26,22 @@ public class TestResourcesUtils {
     }
   }
 
-  private Path copyResourceFileToTempFolder(String resourceName) throws IOException {
+  private Path copyResourceFileToTempFolder(String resourceName, Path tempDir) throws IOException {
     String fileName = Path.of(resourceName).getFileName().toString();
-    InputStream resourceStream = this.getClass().getResourceAsStream(resourceName);
-    Path resourceContainerFolder = Files.createTempDirectory(fileName);
-
+    Path resourceContainerFolder = Files.createDirectory(tempDir.resolve("zip-resource"));
     Path filePath = resourceContainerFolder.resolve(fileName);
-    Files.copy(resourceStream, filePath);
+    try (InputStream resourceStream = this.getClass().getResourceAsStream(resourceName)) {
+      Files.copy(resourceStream, filePath);
+    }
     return filePath;
   }
 
-  public String extractTestFiles(String zipName, String testName) throws IOException {
+  public String extractTestFiles(String zipName, Path tempDir) throws IOException {
     // copy the zip file to a temporary directory so that the zip lib can extract it
-    Path zipFilePath = copyResourceFileToTempFolder(zipName);
+    Path zipFilePath = copyResourceFileToTempFolder(zipName, tempDir);
 
-    // Zip is now on the filesystem. Create folder for extraction
-    Path folder = Files.createTempDirectory(testName);
+    // Create folder for extraction inside the managed temp dir
+    Path folder = Files.createDirectory(tempDir.resolve("input"));
 
     // unzip the file to folder
     try (ZipFile zipFile = new ZipFile(zipFilePath.toFile())) {

@@ -1,6 +1,6 @@
 # SnapSort
 
-A litte hacky tool to rename camera files by date to automate picture sorting.
+A little hacky tool to rename camera files by date to automate picture sorting.
 
 Date sources can be EXIF, file format, or file system date if needed.
 

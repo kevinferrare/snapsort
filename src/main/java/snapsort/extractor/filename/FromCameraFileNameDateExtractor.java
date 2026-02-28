@@ -29,8 +29,12 @@ public class FromCameraFileNameDateExtractor extends BaseFileNameDateExtractor {
     if (isNumber(split[0])) {
       dateIndex = 0;
     }
+    int timeIndex = dateIndex + 1;
+    if (timeIndex >= split.length) {
+      return null;
+    }
     String date = split[dateIndex];
-    String time = split[dateIndex + 1];
+    String time = split[timeIndex];
     if (date.length() != 8 || time.length() != 6) {
       return null;
     }

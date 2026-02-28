@@ -17,6 +17,8 @@ import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -75,35 +77,44 @@ public class ExifDateExtractor implements DateExtractor {
     ).nonNull().toList();
   }
 
-  @SneakyThrows
   private static TimeStampWithSource extractGpsDate(TiffField gpsTimestampField, TiffField gpsDateField) {
     if (gpsTimestampField == null || gpsDateField == null) {
       return null;
     }
-    RationalNumber[] gpsTime = (RationalNumber[])gpsTimestampField.getValue();
-    if (gpsTime.length != 3) {
+    try {
+      Object tsValue = gpsTimestampField.getValue();
+      Object dateValue = gpsDateField.getValue();
+      if (!(tsValue instanceof RationalNumber[] gpsTime) || !(dateValue instanceof String gpsDate)) {
+        log.warn("Unexpected GPS EXIF field types: timestamp={}, date={}", tsValue.getClass(), dateValue.getClass());
+        return null;
+      }
+      if (gpsTime.length != 3) {
+        return null;
+      }
+      LocalTime time = LocalTime.of(gpsTime[0].intValue(), gpsTime[1].intValue(), gpsTime[2].intValue());
+      LocalDate date = LocalDate.parse(gpsDate, GPS_DATE_FORMATTER);
+      return new TimeStampWithSource(LocalDateTime.of(date, time), TimeStampSource.EXIF_GPS_DATE_TIME);
+    } catch (Exception e) {
+      log.warn("Failed to extract GPS date from EXIF", e);
       return null;
     }
-    LocalTime time = LocalTime.of(gpsTime[0].intValue(), gpsTime[1].intValue(), gpsTime[2].intValue());
-    String gpsDate = (String)gpsDateField.getValue();
-    LocalDate date = LocalDate.parse(gpsDate, GPS_DATE_FORMATTER);
-    return new TimeStampWithSource(LocalDateTime.of(date, time), TimeStampSource.EXIF_GPS_DATE_TIME);
   }
 
   private static TimeStampWithSource extractDate(TiffField field, TimeStampSource source) {
     if (field == null) {
       return null;
     }
-    LocalDateTime dateTime = parseDateTime(field.getValueDescription());
-    return new TimeStampWithSource(dateTime, source);
-  }
-
-  private static LocalDateTime parseDateTime(String dateTime) {
-    if (!dateTime.startsWith("'") || !dateTime.endsWith("'")) {
+    try {
+      String value = field.getStringValue();
+      if (StringUtils.isBlank(value)) {
+        return null;
+      }
+      LocalDateTime dateTime = LocalDateTime.parse(value.trim(), EXIF_TIME_FORMATTER);
+      return new TimeStampWithSource(dateTime, source);
+    } catch (Exception e) {
+      log.warn("Failed to parse date from EXIF field {}: {}", field.getTagName(), field.getValueDescription(), e);
       return null;
     }
-    String unquotedDateTime = dateTime.substring(1, dateTime.length() - 1);
-    return LocalDateTime.parse(unquotedDateTime, EXIF_TIME_FORMATTER);
   }
 
   private static ImageMetadata extractExif(Path file) throws IOException {

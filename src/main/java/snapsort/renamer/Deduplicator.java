@@ -7,8 +7,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -21,7 +23,7 @@ public class Deduplicator {
     while (res.collisions()) {
       res = deduplicateDatesStep(res.files());
     }
-    return res.files().stream().sorted().toList();
+    return res.files().stream().sorted(Comparator.comparing(FileInfo::path)).toList();
   }
 
   private static DeduplicateResult deduplicateDatesStep(List<FileInfo> allFiles) {
@@ -36,14 +38,17 @@ public class Deduplicator {
         res.add(first);
         continue;
       }
+      collisions = true;
       // Conflict, add one second to the second file, 2 seconds to the third file, etc.
       int secondsDelta = 0;
       for (FileInfo file : files) {
-        LocalDateTime timestamp = file.getTimestamp().getTime();
-        TimeStampWithSource newTimestamp =
-            new TimeStampWithSource(timestamp.plusSeconds(secondsDelta), TimeStampSource.COLLISION_AVOIDANCE);
-        file.setTimestamp(newTimestamp);
-        res.add(file);
+        if (secondsDelta == 0) {
+          res.add(file);
+        } else {
+          LocalDateTime shifted = file.timestamp().getTime().plusSeconds(secondsDelta);
+          TimeStampWithSource newTimestamp = new TimeStampWithSource(shifted, TimeStampSource.COLLISION_AVOIDANCE);
+          res.add(new FileInfo(file.path(), newTimestamp));
+        }
         secondsDelta++;
       }
     }
@@ -52,6 +57,10 @@ public class Deduplicator {
 
   private static Map<LocalDateTime, List<FileInfo>> groupByDate(List<FileInfo> files) {
     return files.stream()
-        .collect(Collectors.groupingBy(file -> file.getTimestamp().getTime()));
+        .collect(Collectors.groupingBy(
+            file -> file.timestamp().getTime(),
+            TreeMap::new,
+            Collectors.toList()
+        ));
   }
 }

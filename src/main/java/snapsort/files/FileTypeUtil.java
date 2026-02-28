@@ -8,7 +8,8 @@ import java.util.Set;
 
 public class FileTypeUtil {
   private static final Set<String> SUPPORTED_EXTENSIONS = Set.of(
-      "mkv", "jpeg", "jpg", "avi", "mp4", "mov", "png", "webp", "gif");
+      "mkv", "jpeg", "jpg", "avi", "mp4", "mov", "png", "webp", "gif",
+      "heic", "heif", "webm", "3gp", "tiff", "tif");
 
   public static boolean isJpegFile(Path file) {
     String extension = getLowercaseExtension(file);

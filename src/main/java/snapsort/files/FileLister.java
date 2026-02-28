@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import one.util.streamex.StreamEx;
 import org.apache.commons.io.file.PathUtils;
 
+import java.util.Comparator;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -28,7 +30,7 @@ public class FileLister {
   }
 
   public List<FileInfo> listFiles(List<Path> folders) {
-    return StreamEx.of(folders).flatCollection(this::listFiles).sorted().toList();
+    return StreamEx.of(folders).flatCollection(this::listFiles).sorted(Comparator.comparing(FileInfo::path)).toList();
   }
 
   @SneakyThrows
@@ -67,14 +69,11 @@ public class FileLister {
 
   @SneakyThrows
   private FileInfo parseFromFile(Path file) {
-    FileInfo fileInfo = new FileInfo();
-    fileInfo.setPath(file);
     TimeStampWithSource timeStampWithSource = dateChooser.computeTimestamp(file);
     if (timeStampWithSource == null) {
       return null;
     }
-    fileInfo.setTimestamp(timeStampWithSource);
-    return fileInfo;
+    return new FileInfo(file, timeStampWithSource);
   }
 }
 

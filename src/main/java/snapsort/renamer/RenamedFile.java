@@ -1,6 +1,7 @@
 package snapsort.renamer;
 
 import java.nio.file.Path;
+import java.util.Comparator;
 
 public record RenamedFile(
     // New name of the file in its new folder
@@ -8,14 +9,8 @@ public record RenamedFile(
     // New folder name, to be created if needed
     String newFolder,
     // Source file to rename to newName and to move to newFolder
-    Path currentFile) implements Comparable<RenamedFile> {
+    Path currentFile) {
 
-  @Override
-  public int compareTo(RenamedFile o) {
-    int folderComparison = newFolder.compareTo(o.newFolder);
-    if (folderComparison != 0) {
-      return folderComparison;
-    }
-    return newName.compareTo(o.newName);
-  }
+  public static final Comparator<RenamedFile> BY_DESTINATION =
+      Comparator.comparing(RenamedFile::newFolder).thenComparing(RenamedFile::newName);
 }

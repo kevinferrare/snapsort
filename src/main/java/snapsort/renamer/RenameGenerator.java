@@ -18,21 +18,21 @@ public class RenameGenerator {
   private static final DateTimeFormatter DAY_FOLDER_NAME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
   public List<RenamedFile> generateRenamedFileNames(Collection<FileInfo> files) {
-    return files.stream().map(RenameGenerator::generateRenamedFile).sorted().toList();
+    return files.stream().map(RenameGenerator::generateRenamedFile).sorted(RenamedFile.BY_DESTINATION).toList();
   }
 
   private static RenamedFile generateRenamedFile(FileInfo fileInfo) {
-    LocalDateTime timestamp = fileInfo.getTimestamp().getTime();
+    LocalDateTime timestamp = fileInfo.timestamp().getTime();
     String timeString = FinalFileNameDateExtractor.FILE_NAME_TARGET_FORMATTER.format(timestamp);
     String extension = generateExtension(fileInfo);
     String newName = timeString + "." + extension;
     String folderName =
         YEAR_FOLDER_NAME_FORMAT.format(timestamp) + "/" + DAY_FOLDER_NAME_FORMAT.format(timestamp) + "_";
-    return new RenamedFile(newName, folderName, fileInfo.getPath());
+    return new RenamedFile(newName, folderName, fileInfo.path());
   }
 
   private static String generateExtension(FileInfo fileInfo) {
-    String currentExtension = FileTypeUtil.getLowercaseExtension(fileInfo.getPath());
+    String currentExtension = FileTypeUtil.getLowercaseExtension(fileInfo.path());
     if ("jpeg".equals(currentExtension)) {
       return "jpg";
     }
