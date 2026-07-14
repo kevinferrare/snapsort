@@ -10,6 +10,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 class FinalFileNameDateExtractorTest {
 
@@ -35,6 +36,8 @@ class FinalFileNameDateExtractorTest {
 
   @Test
   void colonVariantExtractsCorrectDate() {
+    assumeFalse(System.getProperty("os.name", "").toLowerCase().contains("win"),
+        "Windows does not allow ':' in file names");
     List<TimeStampWithSource> result = extractor.extractDates(Path.of("2024-01-15 10:30:45.jpg"));
 
     assertEquals(1, result.size());

@@ -15,10 +15,10 @@ jobs:
       with:
         fetch-depth: '0'
 
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v5.5.0
       with:
-        java-version: 21
+        java-version: 25
         distribution: zulu
 
     # Determine next version to build. New version is in variable new_tag. Only for main branch as dependabot pull requests cannot create tags:

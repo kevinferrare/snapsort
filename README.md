@@ -78,8 +78,10 @@ The extension is lowercase, and `jpeg` is renamed to `jpg`.
 ## Building
 This applications is built with [Quarkus](https://quarkus.io/).
 You need:
-- Java 21
+- Java 25 (build JDK)
 - Maven > 3.9.5
+
+The project is compiled with `--release 21`, so produced artifacts target Java 21.
 
 To build the jar:
 ```bash
