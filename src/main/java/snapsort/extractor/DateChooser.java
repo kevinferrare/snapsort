@@ -19,9 +19,12 @@ import java.util.List;
 @Slf4j
 @ApplicationScoped
 public class DateChooser {
+  private static final String CLIENT_PROXY_SUFFIX = "_ClientProxy";
+
   private final List<DateExtractor> extractors;
   private final DateRange dateRange;
   private final MedianDateSelector medianDateSelector;
+  private final boolean readFilesystemDateModified;
 
   @Inject
   public DateChooser(FinalFileNameDateExtractor finalFileNameDateExtractor,
@@ -45,28 +48,64 @@ public class DateChooser {
       // last resort, file date, murky but better than nothing
       this.extractors.add(fileDateExtractor);
     }
+    this.readFilesystemDateModified = dateChooserConfiguration.isReadFilesystemDateModified();
     this.dateRange = dateRange;
     this.medianDateSelector = medianDateSelector;
   }
 
   public TimeStampWithSource computeTimestamp(Path file) {
     log.info("Computing timestamp for file {}", file);
-    List<TimeStampWithSource> dates = extractors.stream()
-        .map(extractor -> extractor.extractDates(file))
-        .filter(CollectionUtils::isNotEmpty)
-        // take the first non-empty list
-        .findFirst()
-        .orElseGet(Collections::emptyList)
-        .stream()
+    String extractorUsed = null;
+    List<TimeStampWithSource> extractedDates = Collections.emptyList();
+    for (DateExtractor extractor : extractors) {
+      List<TimeStampWithSource> candidateDates = extractor.extractDates(file);
+      if (CollectionUtils.isNotEmpty(candidateDates)) {
+        extractorUsed = extractorDisplayName(extractor);
+        extractedDates = candidateDates;
+        // Once an extractor returns dates, we ignore later extractors.
+        break;
+      }
+    }
+    List<TimeStampWithSource> dates = extractedDates.stream()
         // filter the list for this extractor only
         // avoids files that would be excluded by this filter to be included because of other extractors
         .filter(date -> isInRange(file, date))
         .toList();
     TimeStampWithSource result = medianDateSelector.selectDate(dates);
     if (result == null) {
-      log.error("Could not find a date for file {}", file);
+      log.error("Could not find a date for file {}. rootCause={}", file,
+          determineRootCause(extractorUsed, extractedDates, dates));
     }
     return result;
+  }
+
+  private String determineRootCause(String extractorUsed, List<TimeStampWithSource> extractedDates,
+      List<TimeStampWithSource> datesInRange) {
+    if (extractorUsed == null) {
+      return "NO_EXTRACTOR_RETURNED_A_DATE"
+          + " (checked=" + extractors.stream().map(this::extractorDisplayName).toList()
+          + ", readFilesystemDateModified=" + readFilesystemDateModified
+          + ", hint=enable --read-filesystem-date-modified to use file last-modified as fallback)";
+    }
+    if (CollectionUtils.isEmpty(datesInRange)) {
+      return "ALL_DATES_OUT_OF_RANGE"
+          + " (extractor=" + extractorUsed
+          + ", extractedCount=" + extractedDates.size()
+          + ", acceptedRange=" + dateRange
+          + ", extracted=" + extractedDates + ")";
+    }
+    return "MEDIAN_SELECTION_RETURNED_NULL"
+        + " (extractor=" + extractorUsed
+        + ", inRangeCount=" + datesInRange.size()
+        + ", inRangeDates=" + datesInRange + ")";
+  }
+
+  private String extractorDisplayName(DateExtractor extractor) {
+    String simpleName = extractor.getClass().getSimpleName();
+    if (simpleName.endsWith(CLIENT_PROXY_SUFFIX)) {
+      return simpleName.substring(0, simpleName.length() - CLIENT_PROXY_SUFFIX.length());
+    }
+    return simpleName;
   }
 
   private boolean isInRange(Path file, TimeStampWithSource date) {
