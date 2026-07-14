@@ -2,7 +2,9 @@ package snapsort;
 
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
+import snapsort.cli.converter.IsoLocalDateConverter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -14,10 +16,10 @@ class CliProducerConfigurationTest {
   private static CommandLine.ParseResult parse(String... args) {
     @CommandLine.Command
     class Stub {
-      @CommandLine.Option(names = "--date-min")
-      String dateMin;
-      @CommandLine.Option(names = "--date-max")
-      String dateMax;
+      @CommandLine.Option(names = "--date-min", converter = IsoLocalDateConverter.class)
+      LocalDate dateMin;
+      @CommandLine.Option(names = "--date-max", converter = IsoLocalDateConverter.class)
+      LocalDate dateMax;
       @CommandLine.Option(names = "--read-filesystem-date-modified", defaultValue = "false")
       boolean readFilesystemDateModified;
     }
@@ -44,8 +46,13 @@ class CliProducerConfigurationTest {
   }
 
   @Test
-  void dateRange_invalidDate_throws() {
-    CommandLine.ParseResult result = parse("--date-min", "not-a-date");
+  void dateRange_invalidDate_failsAtParsing() {
+    assertThrows(CommandLine.ParameterException.class, () -> parse("--date-min", "not-a-date"));
+  }
+
+  @Test
+  void dateRange_maxBeforeMin_throws() {
+    CommandLine.ParseResult result = parse("--date-min", "2024-06-01", "--date-max", "2024-01-15");
     assertThrows(IllegalArgumentException.class, () -> producer.dateRange(result));
   }
 

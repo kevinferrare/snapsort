@@ -21,10 +21,11 @@ public class ApplicationTest {
   private final TestResourcesUtils resourcesUtils = new TestResourcesUtils();
   private ApplicationLauncher launcher;
   private Path outputFolder;
+  private String inputFolderName;
 
   @BeforeEach
   public void setup(@TempDir Path tempDir, QuarkusMainLauncher quarkusMainLauncher) throws IOException {
-    String inputFolderName = resourcesUtils.extractTestFiles("/testfiles.zip", tempDir);
+    inputFolderName = resourcesUtils.extractTestFiles("/testfiles.zip", tempDir);
     outputFolder = Files.createDirectory(tempDir.resolve("output"));
     launcher = new ApplicationLauncher(quarkusMainLauncher);
     launcher.withInputFolders(inputFolderName);
@@ -94,6 +95,41 @@ public class ApplicationTest {
         "/2016/20160919_/2016-09-19 21.11.12.jpg",
         "/2025/20250227_/2025-02-27 00.18.58.jpg"
     );
+  }
+
+  @Test
+  public void testRunWithMissingInputFolder_failsFastAndDoesNotWrite() {
+    Path missingInputFolder = outputFolder.resolve("does-not-exist");
+    launcher.withInputFolders(inputFolderName + "," + missingInputFolder);
+    launcher.withWrite(true);
+
+    var result = launcher.run();
+
+    Assertions.assertEquals(2, result.exitCode());
+    Assertions.assertTrue(listOutput().isEmpty());
+  }
+
+  @Test
+  public void testRunWithEmptyOutputFolder_failsFastAndDoesNotWrite() {
+    launcher.withOutputFolder("   ");
+    launcher.withWrite(true);
+
+    var result = launcher.run();
+
+    Assertions.assertEquals(2, result.exitCode());
+    Assertions.assertTrue(listOutput().isEmpty());
+  }
+
+  @Test
+  public void testRunWithMissingOutputFolder_failsFastAndDoesNotWrite() {
+    Path missingOutputFolder = outputFolder.resolve("missing-output");
+    launcher.withOutputFolder(missingOutputFolder.toString());
+    launcher.withWrite(true);
+
+    var result = launcher.run();
+
+    Assertions.assertEquals(2, result.exitCode());
+    Assertions.assertTrue(listOutput().isEmpty());
   }
 
   private void testOutputFolderIsZipWithout(String... unexpected) {
