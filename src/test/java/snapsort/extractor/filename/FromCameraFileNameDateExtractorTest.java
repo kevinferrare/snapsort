@@ -43,6 +43,35 @@ class FromCameraFileNameDateExtractorTest {
   }
 
   @Test
+  void spaceSeparatedDateExtractsCorrectDate() {
+    List<TimeStampWithSource> result = extractor.extractDates(Path.of("20160804 100935.jpg"));
+
+    assertEquals(1, result.size());
+    assertEquals(LocalDateTime.of(2016, 8, 4, 10, 9, 35), result.getFirst().getTime());
+    assertEquals(TimeStampSource.CAMERA_FILE_NAME, result.getFirst().getSource());
+  }
+
+  @Test
+  void lineageOsFormatExtractsCorrectDate() {
+    List<TimeStampWithSource> result =
+        extractor.extractDates(Path.of("2026-04-20-13-35-05-684.jpg"));
+
+    assertEquals(1, result.size());
+    assertEquals(LocalDateTime.of(2026, 4, 20, 13, 35, 5, 684_000_000), result.getFirst().getTime());
+    assertEquals(TimeStampSource.CAMERA_FILE_NAME, result.getFirst().getSource());
+  }
+
+  @Test
+  void lineageOsFormatWithImgPrefixExtractsCorrectDate() {
+    List<TimeStampWithSource> result =
+        extractor.extractDates(Path.of("IMG_2026-04-20-13-35-05-684.jpg"));
+
+    assertEquals(1, result.size());
+    assertEquals(LocalDateTime.of(2026, 4, 20, 13, 35, 5, 684_000_000), result.getFirst().getTime());
+    assertEquals(TimeStampSource.CAMERA_FILE_NAME, result.getFirst().getSource());
+  }
+
+  @Test
   void singleSegmentFilenameReturnsEmptyList() {
     List<TimeStampWithSource> result = extractor.extractDates(Path.of("photo.jpg"));
 
