@@ -9,20 +9,13 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 @ApplicationScoped
 public class FinalFileNameDateExtractor extends BaseFileNameDateExtractor {
-  private static final String FILE_NAME_TARGET_FORMAT = "yyyy-MM-dd HH.mm.ss";
-
+  // Used only for formatting output file names; parsing normalizes separators, see BaseFileNameDateExtractor#parse
   public static final DateTimeFormatter FILE_NAME_TARGET_FORMATTER =
-      DateTimeFormatter.ofPattern(FILE_NAME_TARGET_FORMAT);
-  // Variants, dot can be a dash or a colon
-  private static final DateTimeFormatter FILE_NAME_TARGET_ALTERNATIVE1_FORMATTER =
-      DateTimeFormatter.ofPattern(FILE_NAME_TARGET_FORMAT.replace(".", "-"));
-  private static final DateTimeFormatter FILE_NAME_TARGET_ALTERNATIVE2_FORMATTER =
-      DateTimeFormatter.ofPattern(FILE_NAME_TARGET_FORMAT.replace(".", ":"));
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH.mm.ss");
+  private static final DateTimeFormatter FILE_NAME_PARSE_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
 
   public FinalFileNameDateExtractor() {
-    super(TimeStampSource.FINAL_FILE_NAME,
-        FILE_NAME_TARGET_FORMATTER,
-        FILE_NAME_TARGET_ALTERNATIVE1_FORMATTER,
-        FILE_NAME_TARGET_ALTERNATIVE2_FORMATTER);
+    super(TimeStampSource.FINAL_FILE_NAME, FILE_NAME_PARSE_FORMATTER);
   }
 }

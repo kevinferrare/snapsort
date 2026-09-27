@@ -41,16 +41,22 @@ public class BaseFileNameDateExtractor implements DateExtractor {
     return null;
   }
 
+  // '-', ' ', '.' and ':' are alternative separators used across the supported file name formats
+  protected String transformFileName(String input) {
+    return input.replace('-', '_').replace(' ', '_').replace('.', '_').replace(':', '_');
+  }
+
   protected LocalDateTime parse(String input) {
     if (input == null) {
       return null;
     }
+    String transformed = transformFileName(input);
     for (DateTimeFormatter formatter : formatters) {
       try {
-        return LocalDateTime.parse(input, formatter);
+        return LocalDateTime.parse(transformed, formatter);
       } catch (DateTimeParseException e) {
         if (log.isDebugEnabled()) {
-          log.debug("Failed to parse date " + input + " with formatter " + formatter, e);
+          log.debug("Failed to parse date " + transformed + " with formatter " + formatter, e);
         }
       }
     }

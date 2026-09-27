@@ -10,6 +10,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 class FromCameraFileNameDateExtractorTest {
 
@@ -68,6 +69,66 @@ class FromCameraFileNameDateExtractorTest {
 
     assertEquals(1, result.size());
     assertEquals(LocalDateTime.of(2026, 4, 20, 13, 35, 5, 684_000_000), result.getFirst().getTime());
+    assertEquals(TimeStampSource.CAMERA_FILE_NAME, result.getFirst().getSource());
+  }
+
+  @Test
+  void pixelFormatExtractsCorrectDate() {
+    List<TimeStampWithSource> result =
+        extractor.extractDates(Path.of("PXL_20210328_205805123.jpg"));
+
+    assertEquals(1, result.size());
+    assertEquals(LocalDateTime.of(2021, 3, 28, 20, 58, 5, 123_000_000), result.getFirst().getTime());
+    assertEquals(TimeStampSource.CAMERA_FILE_NAME, result.getFirst().getSource());
+  }
+
+  @Test
+  void screenshotFormatExtractsCorrectDate() {
+    List<TimeStampWithSource> result =
+        extractor.extractDates(Path.of("Screenshot_20230101-123456.png"));
+
+    assertEquals(1, result.size());
+    assertEquals(LocalDateTime.of(2023, 1, 1, 12, 34, 56), result.getFirst().getTime());
+    assertEquals(TimeStampSource.CAMERA_FILE_NAME, result.getFirst().getSource());
+  }
+
+  @Test
+  void samsungScreenshotWithAppNameSuffixExtractsCorrectDate() {
+    List<TimeStampWithSource> result =
+        extractor.extractDates(Path.of("Screenshot_20230101-123456_ChromeBeta.jpg"));
+
+    assertEquals(1, result.size());
+    assertEquals(LocalDateTime.of(2023, 1, 1, 12, 34, 56), result.getFirst().getTime());
+    assertEquals(TimeStampSource.CAMERA_FILE_NAME, result.getFirst().getSource());
+  }
+
+  @Test
+  void dashScreenshotWithMillisExtractsCorrectDate() {
+    List<TimeStampWithSource> result =
+        extractor.extractDates(Path.of("Screenshot_2023-01-01-12-34-56-123.png"));
+
+    assertEquals(1, result.size());
+    assertEquals(LocalDateTime.of(2023, 1, 1, 12, 34, 56, 123_000_000), result.getFirst().getTime());
+    assertEquals(TimeStampSource.CAMERA_FILE_NAME, result.getFirst().getSource());
+  }
+
+  @Test
+  void dotSeparatedTimeExtractsCorrectDate() {
+    List<TimeStampWithSource> result = extractor.extractDates(Path.of("2026-03-21 01.58.15.jpg"));
+
+    assertEquals(1, result.size());
+    assertEquals(LocalDateTime.of(2026, 3, 21, 1, 58, 15), result.getFirst().getTime());
+    assertEquals(TimeStampSource.CAMERA_FILE_NAME, result.getFirst().getSource());
+  }
+
+  @Test
+  void colonSeparatedTimeExtractsCorrectDate() {
+    assumeFalse(System.getProperty("os.name", "").toLowerCase().contains("win"),
+        "Windows does not allow ':' in file names");
+    List<TimeStampWithSource> result = extractor.extractDates(Path.of("2026-03-21 01:58:15.jpg"));
+
+    assertEquals(1, result.size());
+    assertEquals(LocalDateTime.of(2026, 3, 21, 1, 58, 15), result.getFirst().getTime());
     assertEquals(TimeStampSource.CAMERA_FILE_NAME, result.getFirst().getSource());
   }
 
